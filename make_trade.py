@@ -15,7 +15,7 @@ def buy():
     res = requests.get((url_price+urlPath_price+urlQuery_price))
     res = res.json()
     bought = float(res["price"])
-    print("Bought at: " + resB["price"])
+    print("Bought at: " + res["price"])
     return True
 def sell():
     res = requests.get((url_price+urlPath_price+urlQuery_price))

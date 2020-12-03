@@ -7,12 +7,12 @@ from datetime import datetime
 
 
 #ls_ma_interval = [2,4,6,12,24,48,336,1344]
-ls_ma_interval = [2,4,6,16,24,48,336]
+ls_ma_interval = [2,4,6,18,24,48,336]
 map_ma = {
     2:[],
     4:[],
     6:[],
-    16:[],
+    18:[],
     24:[],
     48:[],
     336:[]
@@ -54,6 +54,10 @@ sell = False
 risk = False
 trueCyc = 0
 
+profit =0.0
+bought =0.0
+sold =0.0
+
 while (len(map_ma[6]) != 1440):
     #track process time to always have information on the open interval
     start = datetime.utcnow()
@@ -70,14 +74,19 @@ while (len(map_ma[6]) != 1440):
     map_ma = stats.update_map(res)
     #check buy conditions
     if (trueCyc>1):
-        buy = sig.ma_buy_sig(map_ma,6,16,risk)
-        sell = sig.ma_sell_sig(map_ma,6,16,risk)
+        buy = sig.ma_buy_sig(map_ma,6,18,risk)
+        sell = sig.ma_sell_sig(map_ma,6,18,risk)
 
-    if (buy):
-        risk = mkTrade.buy()
+    if (buy)&(not risk):
+        risk, bought = mkTrade.buy()
+        print("Bought at: " + str(bought))
 
-    elif (sell):
-        risk = mkTrade.sell()
+    elif (sell)&(risk):
+        risk, sold = mkTrade.sell()
+        print("Sold at: " + str(sold))
+        print("Profit/Loss: " + str(sold-bought))
+        profit += (sold-bought)
+        print("Running Profit: " + str(profit))
 
     #check process time and sleep until the next interval release
     sleep = (60 - (start.second + start.microsecond/1000000.0))

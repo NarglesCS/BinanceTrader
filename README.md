@@ -1,2 +1,2 @@
 # BinanceTrader
-It is a algo-trading bot,
+It is a algo-trading bot.

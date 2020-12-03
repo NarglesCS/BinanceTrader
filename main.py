@@ -1,17 +1,18 @@
-import coinbase_api_connector as con
 import requests
 import stats
+import sig_check as sig
+import make_trade as mkTrade
 import time
 from datetime import datetime
 
 
 #ls_ma_interval = [2,4,6,12,24,48,336,1344]
-ls_ma_interval = [2,4,6,12,24,48,336]
+ls_ma_interval = [2,4,6,16,24,48,336]
 map_ma = {
     2:[],
     4:[],
     6:[],
-    12:[],
+    16:[],
     24:[],
     48:[],
     336:[]
@@ -29,11 +30,7 @@ urlQuery = "?symbol=BTCUSD&interval=1m&limit=1000"
 # urlPath = "/api/v3/klines"
 # urlQuery = "?symbol=BTCUSD&interval=30m&limit=1000"
 
-#Current price call
-method_price = "GET"
-url_price = "https://api.binance.us"
-urlPath_price = "/api/v3/ticker/price"
-urlQuery_price = "?symbol=BTCUSD"
+
 
 #Server time call
 method_time = "GET"
@@ -51,15 +48,13 @@ urlPath_time = "/api/v3/time"
 
 #res1 = requests.get((url+urlPath))
 
-profit =0.0
-bought =0.0
-sold =0.0
 
+buy = False
+sell = False
 risk = False
-
 trueCyc = 0
 
-while (len(map_ma[2]) != 1440):
+while (len(map_ma[6]) != 1440):
     #track process time to always have information on the open interval
     start = datetime.utcnow()
     print("Cycle: " + str(len(map_ma[2])) + " True Cycle: " + str(trueCyc))
@@ -75,25 +70,14 @@ while (len(map_ma[2]) != 1440):
     map_ma = stats.update_map(res)
     #check buy conditions
     if (trueCyc>1):
-        if ((stats.get_cur_ma(map_ma[4])) >= (stats.get_cur_ma(map_ma[48]))) & ((stats.get_prev_ma(map_ma[4])) <= (stats.get_prev_ma(map_ma[48]))) & (not risk):
-            resB = requests.get((url_price+urlPath_price+urlQuery_price))
-            resB = resB.json()
-            bought = float(resB["price"])
-            print("Bought at: " + resB["price"])
-            risk =True
-        elif ((stats.get_cur_ma(map_ma[4])) <= (stats.get_cur_ma(map_ma[48]))) & ((stats.get_prev_ma(map_ma[4])) >= (stats.get_prev_ma(map_ma[48]))) & (risk):
-            resS = requests.get((url_price+urlPath_price+urlQuery_price))
-            resS = resS.json()
-            sold = float(resS["price"])
-            print("Sold at: " + resS["price"])
-            print("Profit/Loss: " + str(sold-bought))
-            risk= False
-            profit += (sold-bought)
-            bought=0
-            sold=0
-            print("Running Profit: " + str(profit))
+        buy = sig.ma_buy_sig(map_ma,6,16,risk)
+        sell = sig.ma_sell_sig(map_ma,6,16,risk)
 
+    if (buy):
+        risk = mkTrade.buy()
 
+    elif (sell):
+        risk = mkTrade.sell()
 
     #check process time and sleep until the next interval release
     sleep = (60 - (start.second + start.microsecond/1000000.0))
